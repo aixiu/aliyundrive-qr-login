@@ -1,0 +1,32 @@
+nginx.conf
+目录：/etc/nginx/nginx.conf
+
+nginx.conf：该文件是Nginx的主配置文件，包括全局配置和http、server等模块的配置。
+sites-available/default：该文件是默认站点的配置文件，在其中可以对站点的访问方式、根目录、错误页面等进行配置。
+
+使用注意：
+一般使用时可以在sites-available目录新建一个配置 文件名随意如：aixiu.com 好区分
+然后写入配置如：
+nginx-1.conf 中
+然后对这个文件做一个软连接到sites-enabled目录，如：
+sudo ln –s /etc/nginx/sites-available/aixiu.com /etc/nginx/sites-enabled
+
+nginx-1.conf和nginx-2.conf 区别：
+就是对uwsgi写法不同，详见文件。
+
+最就是重启nginx 命如下，附两个命令说明：
+
+nginx -s reload 和 systemctl restart nginx
+这两个命令都是用来重启Nginx服务的，但是它们的实现方式和应用场景略有不同。
+
+nginx -s reload：这个命令是在Nginx已经运行的情况下，平滑地重新加载配置文件。这个命令不会中断正在处理的连接，因此在重新加载配置文件的过程中，服务仍然正常运行。
+
+systemctl restart nginx：这个命令是通过systemctl服务管理器来重启Nginx服务。当你使用systemctl来重启Nginx时，它会首先尝试停止Nginx服务，然后再启动Nginx服务。这个过程会短暂中断服务。
+
+在大多数情况下，如果你只是想更新Nginx的配置，应该使用nginx -s reload命令。如果Nginx服务未运行或者你需要完全重新启动Nginx，则应使用systemctl restart nginx命令。
+
+
+相关文档：
+https://www.cnblogs.com/young233/p/13051365.html
+https://blog.csdn.net/yuelai_217/article/details/129861924
+

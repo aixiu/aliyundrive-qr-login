@@ -1,0 +1,134 @@
+1. 安装 uwsgi 进入虚拟环境下
+    pip install uwsgi
+
+[uwsgi]
+socket=0.0.0.0:81
+chdir=/usr/flaskapp/productionProcess
+wsgi-file=app.py
+callable=webapp
+processes=4
+threads=2
+master=True
+daemonize=uwsgi.log
+pidfile=uwsgi.pid
+buffer-size=65536
+
+# 自用配置
+[uwsgi]
+# 监听端口
+socket=0.0.0.0:5500
+# 工作路径
+chdir=/www/wwwroot/aliyundrive-qr-login
+# 项目中wsgi.py文件的目录，相对于项目目录
+wsgi-file=app.py
+# callable的对象就是一个wsgi接口，如Flask中的app，是flask独有的配置项
+callable=app
+# 工作进程数
+processes=1
+# python 虚拟环境路径
+virtualenv=/venvs/venv
+
+source /venvs/venv
+uwsgi --ini uwsgi.ini & 
+# 如果加了& 符号，说明是后台运行
+
+- 停止
+    https://blog.csdn.net/cyb_17302190874/article/details/106541101
+    ps -ef|grep aliyundrive-qr-login | grep -v grep   # | grep -v grep 加上不显示自身进程
+    kill -9 
+
+	ps -ef|grep uwsgi | grep -v grep   # | grep -v grep 加上不显示自身进程
+	ps aux|grep uwsgi | grep -v grep   # | grep -v grep 加上不显示自身进程
+
+    ps -ef|grep nginx | grep -v grep
+
+2. 安装 Nginx 进入虚拟环境下
+    pip install nginx -y
+
+    - 普通请求 -> 8001端口
+    - /static/  -> /www/wwwroot/aliyundrive-qr-login/static
+
+    nginx的默认配置文件路径  /etc/nginx/nginx.conf
+
+    2.1 删除默认的nginx.conf
+        rm nginx.conf
+
+    2.2 新建 nginx.conf  + 内容拷贝 + 保存
+
+        cd /etc/nginx
+        vim nginx.conf 创建并打开文件
+        i                 编辑模式
+		ESC
+		:wq
+
+		cat nginx.conf
+
+3.启动Nginx
+	
+	- 启动
+		systemctl start nginx
+		systemctl stop nginx
+		systemctl restart nginx
+	- 开机启动
+		systemctl enable nginx
+
+
+4.访问
+
+
+nginx -s reload 和 systemctl restart nginx
+这两个命令都是用来重启Nginx服务的，但是它们的实现方式和应用场景略有不同。
+
+nginx -s reload：这个命令是在Nginx已经运行的情况下，平滑地重新加载配置文件。这个命令不会中断正在处理的连接，因此在重新加载配置文件的过程中，服务仍然正常运行。
+
+systemctl restart nginx：这个命令是通过systemctl服务管理器来重启Nginx服务。当你使用systemctl来重启Nginx时，它会首先尝试停止Nginx服务，然后再启动Nginx服务。这个过程会短暂中断服务。
+
+在大多数情况下，如果你只是想更新Nginx的配置，应该使用nginx -s reload命令。如果Nginx服务未运行或者你需要完全重新启动Nginx，则应使用systemctl restart nginx命令。
+
+
+
+
+1-通信接口：
+	socket=:8080		-- socket通信速度比http快
+	http=:8080		-- 官方不推荐使用
+	http-socket=:8888		-- 一般使用这个
+2-项目目录（启动文件所在位置）
+	chdir=
+3-项目中wsgi.py文件的目录，相对于项目目录
+	wsgi-file=test.py
+4-callable的对象就是一个wsgi接口，如Flask中的app，是flask独有的配置项
+（django不需要）
+	callable = WSGIHandler
+5-指定启动的工作进程数
+	processes=4
+6-指定工作进程中的线程数
+	threads=2
+7-启动一个master主进程来管理其他进程，建议启动这个进程，在管理的时候
+  比较方便；如果kill这个master进程，相当于关闭所有的uwsgi进程。
+	master=True
+8-使进程在后台运行，并将日志打到指定的日志文件或者udp服务器
+	daemonize = uwsgi.log
+9-不记录request日志，只记录错误日志
+	disable-logging = true
+10-保存启动之后主进程的pid（保存在uwsgi.pid文件中），防止运行多余程序
+	pidfile=uwsgi.pid
+11-一个请求花费的时间超过了这个harakiri超时时间，那么这个请求都会被丢弃，
+   并且当前处理这个请求的工作进程会被回收再利用（即重启）
+	harakiri = 60
+12-为每个工作进程设置请求数的上限。当一个工作进程处理的请求数达到这个值，
+   那么该工作进程就会被回收重用（重启）。
+	max-requests = 5000
+13-这个配置会使在平滑地重启工作子进程中，如果工作进程结束时间超过了
+   8秒就会被强行结束（忽略之前已经接收到的请求而直接结束）
+	reload-mercy = 8
+14-uwsgi不建议使用root权限去启动uwsgi实例。
+   可以通过root用户去运行uwsgi文件，当通过uid和gid去修改用户（移除root权限）
+	uid=1000
+	gid=1000
+15-buffer-size用于uwsgi包解析的内部缓存区大小，默认是4k。这个值可以设置到64k
+   用于解决报头过大的错误
+	buffer-size=65536
+16-由于GIL的存在，uwsgi默认不支持多线程，不对GIL进行初始化。
+   但如果希望程序中的线程发挥作用，需要加入
+   	enable-threads=True
+
